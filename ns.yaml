@@ -35,7 +35,7 @@ spec:
        memory: 128Mi
      max:
        cpu: 500m
-       memory: 512Mi
+       memory: 1Gi
      min:
        cpu: 100m
        memory: 128Mi
