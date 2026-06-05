@@ -4,22 +4,29 @@ metadata:
   name: prometheus-config
   namespace: observability
 data:
-  prometheus.yaml: | 
+  prometheus.yml: |
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
+
     alerting:
       alertmanagers:
         - static_configs:
-            - targets:
-    rule_files:
+            - targets: []
+              # - 'alertmanager:9093'    # uncomment in Phase 5
+
+    rule_files: []
+      # - /etc/prometheus/rules/*.yaml  # uncomment in Phase 5
+
     scrape_configs:
-      - job_name:  'prometheus'
+
+      - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
+
       - job_name: 'kubelet'
-        scheme:   https
-        tls_config: 
+        scheme: https
+        tls_config:
           insecure_skip_verify: true
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
         kubernetes_sd_configs:
@@ -31,57 +38,93 @@ data:
             target_label: __address__
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
+
       - job_name: 'cadvisor'
-        scheme: https 
+        scheme: https
+        metrics_path: /metrics/cadvisor      # ← was missing
         tls_config:
-            insecure_skip_verify: true
+          insecure_skip_verify: true
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
         kubernetes_sd_configs:
-            - role: node
+          - role: node
         relabel_configs:
           - source_labels: [__address__]
             regex: '(.*):.*'
-            replacement: '{$1}.10250'
+            replacement: '${1}:10250'
             target_label: __address__
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
+
       - job_name: 'node-exporter'
         kubernetes_sd_configs:
-            - role: endpoints
-              namespace: ['observability']
-              - source_labels: [__meta_kubernetes_endpoints_name]
-                action: keep
-                regex: node-exporter
+          - role: endpoints             # ← fixed indentation
+            namespaces:                 # ← fixed format
+              names: ['observability']
+        relabel_configs:                # ← moved outside sd_configs
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            action: keep
+            regex: node-exporter
+
       - job_name: 'kube-state-metrics'
         kubernetes_sd_configs:
-            - role: endpoints
-             namespaces:
-                names: ['observability']
+          - role: endpoints             # ← fixed indentation
+            namespaces:
+              names: ['observability']
+        relabel_configs:                # ← fixed indentation
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            action: keep
+            regex: kube-state-metrics
+
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: ['default']
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: false
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
         relabel_configs:
-            - source_labels: [__meta_kubernetes_endpoints_name]
-              action: keep
-              regex: kube-state-metrics
-        - job_name: 'kubernetes-pods'
-          kubernetes_sd_configs:
-            - role: pod
-          relabel_configs:
-            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-              action: keep
-              regex: true
-            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-              action: replace
-              target_label: __metrics_path__
-              regex: (.+)
-            - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-              action: replace
-              regex: ([^:]+)(?::\d+)?;(\d+)
-              replacement: $1:$2
-              target_label: __address__
-            - action: labelmap
-              regex: __meta_kubernetes_pod_label_(.+)
-            - source_labels: [__meta_kubernetes_namespace]
-              action: replace
-              target_label: kubernetes_namespace
-            - source_labels: [__meta_kubernetes_pod_name]
-              action: replace
-              target_label: kubernetes_pod_name
+          - source_labels:
+              - __meta_kubernetes_namespace
+              - __meta_kubernetes_service_name
+              - __meta_kubernetes_endpoint_port_name
+            action: keep
+            regex: default;kubernetes;https
+          - target_label: component
+            replacement: apiserver
+
+      - job_name: 'etcd'
+        static_configs:
+          - targets:
+              - '10.0.0.100:2381'
+            labels:
+              component: etcd
+        metrics_path: /metrics
+        scheme: http
+
+      - job_name: 'kubernetes-pods'       # ← moved back to correct indent level
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name

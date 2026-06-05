@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: pod
+  name: pod
+  namespace: observability 
+spec:
+  containers:
+  - image: alpine:latest
+    name: pod
+    command: ["sleep","3600"]
+    volumeMounts:
+      - name: storage
+        mountPath: /debug
+  volumes:
+    - name: storage
+      configMap:
+        name: prometheus-config

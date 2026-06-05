@@ -24,12 +24,12 @@ spec:
 ---
 apiVersion: v1
 kind: LimitRange
-metadata:
+metadata: 
   name: observability-limit
   namespace: observability
 spec:
   limits:
-   - type: Container
+   - type: Container  
      default:
        cpu: 200m
        memory: 128Mi
@@ -38,4 +38,4 @@ spec:
        memory: 1Gi
      min:
        cpu: 100m
-       memory: 128Mi
+       memory: 128Mi      

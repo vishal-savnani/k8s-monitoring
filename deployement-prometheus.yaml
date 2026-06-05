@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus
+  name: prometheus
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: observability-sa 
+      containers:
+      - image: prom/prometheus:v2.51.0
+        name: prometheus
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/prometheus"
+          - "--storage.tsdb.retention.time=10d"
+          - "--web.enable-lifecycle"
+        ports:
+        - containerPort: 9090
+        resources:
+          requests:
+            cpu: 200m
+            memory: 500Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+          - name: config
+            mountPath: /etc/prometheus
+          - name: storage
+            mountPath: /prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config 
+        - name: storage
+          persistentVolumeClaim:
+            claimName: prometheus-pvc 
