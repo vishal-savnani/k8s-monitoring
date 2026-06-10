@@ -10,13 +10,18 @@ spec:
   selector:
     matchLabels:
       app: prometheus
-  strategy: {}
+  strategy: 
+    type: Recreate
   template:
     metadata:
       labels:
         app: prometheus
     spec:
       serviceAccountName: observability-sa 
+      securityContext:
+        runAsUser: 65534
+        runAsNonRoot: true
+        fsGroup: 65534
       containers:
       - image: prom/prometheus:v2.51.0
         name: prometheus

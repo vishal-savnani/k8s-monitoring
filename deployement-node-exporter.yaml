@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: node-exporter
+  name: node-exporter
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-exporter
+  strategy: {}  
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      serviceAccountName: observability-sa 
+      containers:
+      - image: prom/node-exporter:v1.7.0
+        name: node-exporter
+        args:
+          - "--path.procfs=/host/proc"
+          - "--path.sysfs=/host/sys"
+          - "--path.rootfs=/host/root"
+          - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 30Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          runAsUser: 65534
+        volumeMounts:
+          - name: proc
+            mountPath: /host/proc
+            readOnly: true
+          - name: sys
+            mountPath: /host/sys
+            readOnly: true
+          - name: root
+            mountPath: /host/root
+            readOnly: true
+            mountPropagation: HostToContainer
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: root
+          hostPath:
+            path: /
+
+status: {}

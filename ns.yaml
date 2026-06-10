@@ -37,5 +37,5 @@ spec:
        cpu: 500m
        memory: 1Gi
      min:
-       cpu: 100m
-       memory: 128Mi      
+       cpu: 50m
+       memory: 30Mi      
