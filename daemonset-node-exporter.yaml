@@ -1,16 +1,14 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   labels:
     app: node-exporter
   name: node-exporter
   namespace: observability
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: node-exporter
-  strategy: {}  
   template:
     metadata:
       labels:
