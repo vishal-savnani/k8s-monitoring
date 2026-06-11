@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: kube-state-metrics
+  name: kube-state-metrics
+  namespace: observability
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    name: teltemetry
+  - port: 8081
+    protocol: TCP
+    targetPort: 8081
+    name: metrics
+  selector:
+    app: kube-state-metrics

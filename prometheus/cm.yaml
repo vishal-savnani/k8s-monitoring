@@ -63,7 +63,7 @@ data:
         relabel_configs:                # ← moved outside sd_configs
           - source_labels: [__meta_kubernetes_endpoints_name]
             action: keep
-            regex: node-exporter
+            regex: exporter-service
 
       - job_name: 'kube-state-metrics'
         kubernetes_sd_configs:
