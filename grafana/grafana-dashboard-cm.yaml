@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: prometheus
+        type: prometheus
+        access: proxy
+        url: prometheus-service
+        isDeafault: true
+        editable: false
+        jsonData:
+          timeInterval: "15s"
+          httpMethod: POST
