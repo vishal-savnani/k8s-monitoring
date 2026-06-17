@@ -9,7 +9,7 @@ data:
       - name: prometheus
         type: prometheus
         access: proxy
-        url: prometheus-service
+        url: http://prometheus-service.observability.svc.cluster.local:9090
         isDeafault: true
         editable: false
         jsonData:
